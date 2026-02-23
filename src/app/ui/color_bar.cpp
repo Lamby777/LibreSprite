@@ -40,7 +40,6 @@
 #include "app/ui/status_bar.h"
 #include "app/ui/styled_button.h"
 #include "app/ui_context.h"
-#include "app/ui_context.h"
 #include "app/util/clipboard.h"
 #include "base/bind.h"
 #include "base/scoped_value.h"
@@ -62,19 +61,11 @@
 #include "ui/separator.h"
 #include "ui/system.h"
 
-
 #include <cstring>
-
 
 namespace app {
 
-enum class PalButton {
-  EDIT,
-  SORT,
-  PRESETS,
-  OPTIONS,
-  MAX
-};
+enum class PalButton { EDIT, SORT, PRESETS, OPTIONS, MAX };
 
 using namespace app::skin;
 using namespace ui;
@@ -82,13 +73,12 @@ using namespace ui;
 class ColorBar::WarningIcon : public StyledButton {
 public:
   WarningIcon()
-    : StyledButton(skin::SkinTheme::instance()->styles.warningBox()) {
-  }
+      : StyledButton(skin::SkinTheme::instance()->styles.warningBox()) {}
 
 protected:
-  void onPaint(ui::PaintEvent& ev) override {
+  void onPaint(ui::PaintEvent &ev) override {
     // if (isEnabled())
-      StyledButton::onPaint(ev);
+    StyledButton::onPaint(ev);
     // else
     //   ev.graphics()->fillRect(getBgColor(), clientBounds());
   }
@@ -97,9 +87,8 @@ protected:
 //////////////////////////////////////////////////////////////////////
 // ColorBar::ScrollableView class
 
-ColorBar::ScrollableView::ScrollableView()
-{
-  SkinTheme* theme = static_cast<SkinTheme*>(this->theme());
+ColorBar::ScrollableView::ScrollableView() {
+  SkinTheme *theme = static_cast<SkinTheme *>(this->theme());
   int l = theme->parts.editorSelected()->bitmapW()->width();
   int t = theme->parts.editorSelected()->bitmapN()->height();
   int r = theme->parts.editorSelected()->bitmapE()->width();
@@ -108,57 +97,46 @@ ColorBar::ScrollableView::ScrollableView()
   setBorder(gfx::Border(l, t, r, b));
 }
 
-void ColorBar::ScrollableView::onPaint(ui::PaintEvent& ev)
-{
-  ui::Graphics* g = ev.graphics();
-  SkinTheme* theme = static_cast<SkinTheme*>(this->theme());
+void ColorBar::ScrollableView::onPaint(ui::PaintEvent &ev) {
+  ui::Graphics *g = ev.graphics();
+  SkinTheme *theme = static_cast<SkinTheme *>(this->theme());
 
-  theme->drawRect(
-    g, clientBounds(),
-    (hasFocus() ? theme->parts.editorSelected().get():
-                  theme->parts.editorNormal().get()),
-    gfx::ColorNone);
+  theme->drawRect(g, clientBounds(),
+                  (hasFocus() ? theme->parts.editorSelected().get()
+                              : theme->parts.editorNormal().get()),
+                  gfx::ColorNone);
 }
 
 //////////////////////////////////////////////////////////////////////
 // ColorBar class
 
-ColorBar* ColorBar::m_instance = NULL;
+ColorBar *ColorBar::m_instance = NULL;
 
 ColorBar::ColorBar(int align)
-  : Box(align)
-  , m_buttons(int(PalButton::MAX))
-  , m_splitter(Splitter::ByPercentage, VERTICAL)
-  , m_paletteView(true, PaletteView::FgBgColors, this,
-      Preferences::instance().colorBar.boxSize() * guiscale())
-  , m_remapButton("Remap")
-  , m_selector(ColorSelector::NONE)
-  , m_tintShadeTone(nullptr)
-  , m_spectrum(nullptr)
-  , m_wheel(nullptr)
-  , m_fgColor(app::Color::fromRgb(255, 255, 255), IMAGE_RGB)
-  , m_bgColor(app::Color::fromRgb(0, 0, 0), IMAGE_RGB)
-  , m_fgWarningIcon(new WarningIcon)
-  , m_bgWarningIcon(new WarningIcon)
-  , m_lock(false)
-  , m_syncingWithPref(false)
-  , m_lastDocument(nullptr)
-  , m_ascending(true)
-  , m_lastButtons(kButtonLeft)
-{
+    : Box(align), m_buttons(int(PalButton::MAX)),
+      m_splitter(Splitter::ByPercentage, VERTICAL),
+      m_paletteView(true, PaletteView::FgBgColors, this,
+                    Preferences::instance().colorBar.boxSize() * guiscale()),
+      m_remapButton("Remap"), m_selector(ColorSelector::NONE),
+      m_tintShadeTone(nullptr), m_spectrum(nullptr), m_wheel(nullptr),
+      m_fgColor(app::Color::fromRgb(255, 255, 255), IMAGE_RGB),
+      m_bgColor(app::Color::fromRgb(0, 0, 0), IMAGE_RGB),
+      m_fgWarningIcon(new WarningIcon), m_bgWarningIcon(new WarningIcon),
+      m_lock(false), m_syncingWithPref(false), m_lastDocument(nullptr),
+      m_ascending(true), m_lastButtons(kButtonLeft) {
   m_instance = this;
 
-  SkinTheme* theme = static_cast<SkinTheme*>(this->theme());
+  SkinTheme *theme = static_cast<SkinTheme *>(this->theme());
 
-  setBorder(gfx::Border(2*guiscale(), 0, 0, 0));
-  setChildSpacing(2*guiscale());
+  setBorder(gfx::Border(2 * guiscale(), 0, 0, 0));
+  setChildSpacing(2 * guiscale());
 
   m_paletteView.setColumns(8);
   m_fgColor.setSizeHint(0, m_fgColor.sizeHint().h);
   m_bgColor.setSizeHint(0, m_bgColor.sizeHint().h);
 
   // TODO hardcoded scroll bar width should be get from skin.xml file
-  int scrollBarWidth = 6*guiscale();
+  int scrollBarWidth = 6 * guiscale();
   m_scrollableView.horizontalBar()->setBarWidth(scrollBarWidth);
   m_scrollableView.verticalBar()->setBarWidth(scrollBarWidth);
   setup_mini_look(m_scrollableView.horizontalBar());
@@ -177,19 +155,17 @@ ColorBar::ColorBar(int align)
   m_splitter.addChild(&m_palettePlaceholder);
   m_splitter.addChild(&m_selectorPlaceholder);
 
-  setColorSelector(
-    Preferences::instance().colorBar.selector());
+  setColorSelector(Preferences::instance().colorBar.selector());
 
-  Box* buttonsBox = new HBox();
+  Box *buttonsBox = new HBox();
   buttonsBox->addChild(&m_buttons);
-  m_buttons.setMaxSize(gfx::Size(m_buttons.maxSize().w,
-                                 16*ui::guiscale()));
+  m_buttons.setMaxSize(gfx::Size(m_buttons.maxSize().w, 16 * ui::guiscale()));
 
   addChild(buttonsBox);
   addChild(&m_splitter);
 
-  HBox* fgBox = new HBox;
-  HBox* bgBox = new HBox;
+  HBox *fgBox = new HBox;
+  HBox *bgBox = new HBox;
   fgBox->noBorderNoChildSpacing();
   bgBox->noBorderNoChildSpacing();
   fgBox->addChild(&m_fgColor);
@@ -202,16 +178,21 @@ ColorBar::ColorBar(int align)
   m_fgColor.setExpansive(true);
   m_bgColor.setExpansive(true);
 
-  m_remapButton.Click.connect(base::Bind<void>(&ColorBar::onRemapButtonClick, this));
+  m_remapButton.Click.connect(
+      base::Bind<void>(&ColorBar::onRemapButtonClick, this));
   m_fgColor.Change.connect(&ColorBar::onFgColorButtonChange, this);
   m_bgColor.Change.connect(&ColorBar::onBgColorButtonChange, this);
-  m_fgWarningIcon->Click.connect(base::Bind<void>(&ColorBar::onFixWarningClick, this, &m_fgColor, m_fgWarningIcon));
-  m_bgWarningIcon->Click.connect(base::Bind<void>(&ColorBar::onFixWarningClick, this, &m_bgColor, m_bgWarningIcon));
+  m_fgWarningIcon->Click.connect(base::Bind<void>(
+      &ColorBar::onFixWarningClick, this, &m_fgColor, m_fgWarningIcon));
+  m_bgWarningIcon->Click.connect(base::Bind<void>(
+      &ColorBar::onFixWarningClick, this, &m_bgColor, m_bgWarningIcon));
 
   m_tooltips.addTooltipFor(&m_fgColor, "Foreground color", LEFT);
   m_tooltips.addTooltipFor(&m_bgColor, "Background color", LEFT);
-  m_tooltips.addTooltipFor(m_fgWarningIcon, "Add foreground color to the palette", LEFT);
-  m_tooltips.addTooltipFor(m_bgWarningIcon, "Add background color to the palette", LEFT);
+  m_tooltips.addTooltipFor(m_fgWarningIcon,
+                           "Add foreground color to the palette", LEFT);
+  m_tooltips.addTooltipFor(m_bgWarningIcon,
+                           "Add background color to the palette", LEFT);
 
   // Set background color reading its value from the configuration.
   setBgColor(Preferences::instance().colorBar.bgColor());
@@ -227,7 +208,8 @@ ColorBar::ColorBar(int align)
   m_paletteView.setBgColor(theme->colors.tabActiveFace());
 
   // Change labels foreground color
-  m_buttons.ItemChange.connect(base::Bind<void>(&ColorBar::onPaletteButtonClick, this));
+  m_buttons.ItemChange.connect(
+      base::Bind<void>(&ColorBar::onPaletteButtonClick, this));
 
   m_buttons.addItem(theme->parts.palEdit());
   m_buttons.addItem(theme->parts.palSort());
@@ -235,141 +217,131 @@ ColorBar::ColorBar(int align)
   m_buttons.addItem(theme->parts.palOptions());
 
   // Tooltips
-  TooltipManager* tooltipManager = new TooltipManager();
+  TooltipManager *tooltipManager = new TooltipManager();
   addChild(tooltipManager);
-  tooltipManager->addTooltipFor(m_buttons.getItem((int)PalButton::EDIT), "Edit Color", BOTTOM);
-  tooltipManager->addTooltipFor(m_buttons.getItem((int)PalButton::SORT), "Sort & Gradients", BOTTOM);
-  tooltipManager->addTooltipFor(m_buttons.getItem((int)PalButton::PRESETS), "Presets", BOTTOM);
-  tooltipManager->addTooltipFor(m_buttons.getItem((int)PalButton::OPTIONS), "Options", BOTTOM);
-  tooltipManager->addTooltipFor(&m_remapButton, "Matches old indexes with new indexes", BOTTOM);
+  tooltipManager->addTooltipFor(m_buttons.getItem((int)PalButton::EDIT),
+                                "Edit Color", BOTTOM);
+  tooltipManager->addTooltipFor(m_buttons.getItem((int)PalButton::SORT),
+                                "Sort & Gradients", BOTTOM);
+  tooltipManager->addTooltipFor(m_buttons.getItem((int)PalButton::PRESETS),
+                                "Presets", BOTTOM);
+  tooltipManager->addTooltipFor(m_buttons.getItem((int)PalButton::OPTIONS),
+                                "Options", BOTTOM);
+  tooltipManager->addTooltipFor(&m_remapButton,
+                                "Matches old indexes with new indexes", BOTTOM);
 
   onColorButtonChange(getFgColor());
 
   UIContext::instance()->addObserver(this);
-  m_beforeCmdConn = UIContext::instance()->BeforeCommandExecution.connect(&ColorBar::onBeforeExecuteCommand, this);
-  m_afterCmdConn = UIContext::instance()->AfterCommandExecution.connect(&ColorBar::onAfterExecuteCommand, this);
-  m_fgConn = Preferences::instance().colorBar.fgColor.AfterChange.connect(base::Bind<void>(&ColorBar::onFgColorChangeFromPreferences, this));
-  m_bgConn = Preferences::instance().colorBar.bgColor.AfterChange.connect(base::Bind<void>(&ColorBar::onBgColorChangeFromPreferences, this));
+  m_beforeCmdConn = UIContext::instance()->BeforeCommandExecution.connect(
+      &ColorBar::onBeforeExecuteCommand, this);
+  m_afterCmdConn = UIContext::instance()->AfterCommandExecution.connect(
+      &ColorBar::onAfterExecuteCommand, this);
+  m_fgConn = Preferences::instance().colorBar.fgColor.AfterChange.connect(
+      base::Bind<void>(&ColorBar::onFgColorChangeFromPreferences, this));
+  m_bgConn = Preferences::instance().colorBar.bgColor.AfterChange.connect(
+      base::Bind<void>(&ColorBar::onBgColorChangeFromPreferences, this));
   m_paletteView.FocusEnter.connect(&ColorBar::onFocusPaletteView, this);
-  m_appPalChangeConn = App::instance()->PaletteChange.connect(&ColorBar::onAppPaletteChange, this);
+  m_appPalChangeConn = App::instance()->PaletteChange.connect(
+      &ColorBar::onAppPaletteChange, this);
 }
 
-ColorBar::~ColorBar()
-{
-  UIContext::instance()->removeObserver(this);
-}
+ColorBar::~ColorBar() { UIContext::instance()->removeObserver(this); }
 
-void ColorBar::setPixelFormat(PixelFormat pixelFormat)
-{
+void ColorBar::setPixelFormat(PixelFormat pixelFormat) {
   m_fgColor.setPixelFormat(pixelFormat);
   m_bgColor.setPixelFormat(pixelFormat);
 }
 
-app::Color ColorBar::getFgColor()
-{
-  return m_fgColor.getColor();
-}
+app::Color ColorBar::getFgColor() { return m_fgColor.getColor(); }
 
-app::Color ColorBar::getBgColor()
-{
-  return m_bgColor.getColor();
-}
+app::Color ColorBar::getBgColor() { return m_bgColor.getColor(); }
 
-void ColorBar::setFgColor(const app::Color& color)
-{
+void ColorBar::setFgColor(const app::Color &color) {
   m_fgColor.setColor(color);
 
   if (!m_lock)
     onColorButtonChange(color);
 }
 
-void ColorBar::setBgColor(const app::Color& color)
-{
+void ColorBar::setBgColor(const app::Color &color) {
   m_bgColor.setColor(color);
 
   if (!m_lock)
     onColorButtonChange(color);
 }
 
-PaletteView* ColorBar::getPaletteView()
-{
-  return &m_paletteView;
-}
+PaletteView *ColorBar::getPaletteView() { return &m_paletteView; }
 
-ColorBar::ColorSelector ColorBar::getColorSelector()
-{
-  return m_selector;
-}
+ColorBar::ColorSelector ColorBar::getColorSelector() { return m_selector; }
 
-void ColorBar::setColorSelector(ColorSelector selector)
-{
+void ColorBar::setColorSelector(ColorSelector selector) {
   if (m_selector == selector)
     return;
 
-  if (m_tintShadeTone) m_tintShadeTone->setVisible(false);
-  if (m_spectrum) m_spectrum->setVisible(false);
-  if (m_wheel) m_wheel->setVisible(false);
+  if (m_tintShadeTone)
+    m_tintShadeTone->setVisible(false);
+  if (m_spectrum)
+    m_spectrum->setVisible(false);
+  if (m_wheel)
+    m_wheel->setVisible(false);
 
   m_selector = selector;
   Preferences::instance().colorBar.selector(m_selector);
 
   switch (m_selector) {
 
-    case ColorSelector::TINT_SHADE_TONE:
-      if (!m_tintShadeTone) {
-        m_tintShadeTone = new ColorTintShadeTone;
-        m_tintShadeTone->setExpansive(true);
-        m_tintShadeTone->selectColor(m_fgColor.getColor());
-        m_tintShadeTone->ColorChange.connect(&ColorBar::onPickSpectrum, this);
-        m_selectorPlaceholder.addChild(m_tintShadeTone);
-      }
-      m_tintShadeTone->setVisible(true);
-      break;
+  case ColorSelector::TINT_SHADE_TONE:
+    if (!m_tintShadeTone) {
+      m_tintShadeTone = new ColorTintShadeTone;
+      m_tintShadeTone->setExpansive(true);
+      m_tintShadeTone->selectColor(m_fgColor.getColor());
+      m_tintShadeTone->ColorChange.connect(&ColorBar::onPickSpectrum, this);
+      m_selectorPlaceholder.addChild(m_tintShadeTone);
+    }
+    m_tintShadeTone->setVisible(true);
+    break;
 
-    case ColorSelector::SPECTRUM:
-      if (!m_spectrum) {
-        m_spectrum = new ColorSpectrum;
-        m_spectrum->setExpansive(true);
-        m_spectrum->selectColor(m_fgColor.getColor());
-        m_spectrum->ColorChange.connect(&ColorBar::onPickSpectrum, this);
-        m_selectorPlaceholder.addChild(m_spectrum);
-      }
-      m_spectrum->setVisible(true);
-      break;
+  case ColorSelector::SPECTRUM:
+    if (!m_spectrum) {
+      m_spectrum = new ColorSpectrum;
+      m_spectrum->setExpansive(true);
+      m_spectrum->selectColor(m_fgColor.getColor());
+      m_spectrum->ColorChange.connect(&ColorBar::onPickSpectrum, this);
+      m_selectorPlaceholder.addChild(m_spectrum);
+    }
+    m_spectrum->setVisible(true);
+    break;
 
-    case ColorSelector::RGB_WHEEL:
-    case ColorSelector::RYB_WHEEL:
-      if (!m_wheel) {
-        m_wheel = new ColorWheel;
-        m_wheel->setExpansive(true);
-        m_wheel->selectColor(m_fgColor.getColor());
-        m_wheel->ColorChange.connect(&ColorBar::onPickSpectrum, this);
-        m_selectorPlaceholder.addChild(m_wheel);
-      }
-      m_wheel->setColorModel(
-        (m_selector == ColorSelector::RGB_WHEEL ?
-         ColorWheel::ColorModel::RGB:
-         ColorWheel::ColorModel::RYB));
-      m_wheel->setVisible(true);
-      break;
-
+  case ColorSelector::RGB_WHEEL:
+  case ColorSelector::RYB_WHEEL:
+    if (!m_wheel) {
+      m_wheel = new ColorWheel;
+      m_wheel->setExpansive(true);
+      m_wheel->selectColor(m_fgColor.getColor());
+      m_wheel->ColorChange.connect(&ColorBar::onPickSpectrum, this);
+      m_selectorPlaceholder.addChild(m_wheel);
+    }
+    m_wheel->setColorModel((m_selector == ColorSelector::RGB_WHEEL
+                                ? ColorWheel::ColorModel::RGB
+                                : ColorWheel::ColorModel::RYB));
+    m_wheel->setVisible(true);
+    break;
   }
 
   m_selectorPlaceholder.layout();
 }
 
-void ColorBar::setPaletteEditorButtonState(bool state)
-{
+void ColorBar::setPaletteEditorButtonState(bool state) {
   m_buttons.getItem(int(PalButton::EDIT))->setSelected(state);
 }
 
-void ColorBar::onActiveSiteChange(const doc::Site& site)
-{
+void ColorBar::onActiveSiteChange(const doc::Site &site) {
   if (m_lastDocument != site.document()) {
     if (m_lastDocument)
       m_lastDocument->removeObserver(this);
 
-    m_lastDocument = const_cast<doc::Document*>(site.document());
+    m_lastDocument = const_cast<doc::Document *>(site.document());
 
     if (m_lastDocument)
       m_lastDocument->addObserver(this);
@@ -378,14 +350,12 @@ void ColorBar::onActiveSiteChange(const doc::Site& site)
   }
 }
 
-void ColorBar::onGeneralUpdate(doc::DocumentEvent& ev)
-{
+void ColorBar::onGeneralUpdate(doc::DocumentEvent &ev) {
   // TODO Observe palette changes only
   invalidate();
 }
 
-void ColorBar::onAppPaletteChange()
-{
+void ColorBar::onAppPaletteChange() {
   fixColorIndex(m_fgColor);
   fixColorIndex(m_bgColor);
 
@@ -393,21 +363,18 @@ void ColorBar::onAppPaletteChange()
   updateWarningIcon(m_bgColor.getColor(), m_bgWarningIcon);
 }
 
-void ColorBar::onFocusPaletteView()
-{
+void ColorBar::onFocusPaletteView() {
   App::instance()->inputChain().prioritize(this);
 }
 
-void ColorBar::onBeforeExecuteCommand(CommandExecutionEvent& ev)
-{
+void ColorBar::onBeforeExecuteCommand(CommandExecutionEvent &ev) {
   if (ev.command()->id() == CommandId::SetPalette ||
       ev.command()->id() == CommandId::LoadPalette ||
       ev.command()->id() == CommandId::ColorQuantization)
     showRemap();
 }
 
-void ColorBar::onAfterExecuteCommand(CommandExecutionEvent& ev)
-{
+void ColorBar::onAfterExecuteCommand(CommandExecutionEvent &ev) {
   if (ev.command()->id() == CommandId::Undo ||
       ev.command()->id() == CommandId::Redo)
     invalidate();
@@ -416,153 +383,149 @@ void ColorBar::onAfterExecuteCommand(CommandExecutionEvent& ev)
   // undone a "RGB -> Indexed" conversion), we hide the "Remap"
   // button.
   doc::Site site = UIContext::instance()->activeSite();
-  if (site.sprite() &&
-      site.sprite()->pixelFormat() != IMAGE_INDEXED) {
+  if (site.sprite() && site.sprite()->pixelFormat() != IMAGE_INDEXED) {
     hideRemap();
   }
 }
 
 // Switches the palette-editor
-void ColorBar::onPaletteButtonClick()
-{
+void ColorBar::onPaletteButtonClick() {
   int item = m_buttons.selectedItem();
   m_buttons.deselectItems();
 
   switch (static_cast<PalButton>(item)) {
 
-    case PalButton::EDIT: {
-      Command* cmd_show_palette_editor = CommandsModule::instance()->getCommandByName(CommandId::PaletteEditor);
-      Params params;
-      params.set("switch", "true");
+  case PalButton::EDIT: {
+    Command *cmd_show_palette_editor =
+        CommandsModule::instance()->getCommandByName(CommandId::PaletteEditor);
+    Params params;
+    params.set("switch", "true");
 
-      UIContext::instance()->executeCommand(cmd_show_palette_editor, params);
-      break;
+    UIContext::instance()->executeCommand(cmd_show_palette_editor, params);
+    break;
+  }
+
+  case PalButton::SORT: {
+    gfx::Rect bounds = m_buttons.getItem(item)->bounds();
+
+    Menu menu;
+    MenuItem rev("Reverse Colors"), grd("Gradient"), hue("Sort by Hue"),
+        sat("Sort by Saturation"), bri("Sort by Brightness"),
+        lum("Sort by Luminance"), red("Sort by Red"), grn("Sort by Green"),
+        blu("Sort by Blue"), alp("Sort by Alpha"), asc("Ascending"),
+        des("Descending");
+    menu.addChild(&rev);
+    menu.addChild(&grd);
+    menu.addChild(new ui::MenuSeparator);
+    menu.addChild(&hue);
+    menu.addChild(&sat);
+    menu.addChild(&bri);
+    menu.addChild(&lum);
+    menu.addChild(new ui::MenuSeparator);
+    menu.addChild(&red);
+    menu.addChild(&grn);
+    menu.addChild(&blu);
+    menu.addChild(&alp);
+    menu.addChild(new ui::MenuSeparator);
+    menu.addChild(&asc);
+    menu.addChild(&des);
+
+    if (m_ascending)
+      asc.setSelected(true);
+    else
+      des.setSelected(true);
+
+    rev.Click.connect(base::Bind<void>(&ColorBar::onReverseColors, this));
+    grd.Click.connect(base::Bind<void>(&ColorBar::onGradient, this));
+    hue.Click.connect(
+        base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::HUE));
+    sat.Click.connect(
+        base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::SATURATION));
+    bri.Click.connect(
+        base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::VALUE));
+    lum.Click.connect(
+        base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::LUMA));
+    red.Click.connect(
+        base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::RED));
+    grn.Click.connect(
+        base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::GREEN));
+    blu.Click.connect(
+        base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::BLUE));
+    alp.Click.connect(
+        base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::ALPHA));
+    asc.Click.connect(base::Bind<void>(&ColorBar::setAscending, this, true));
+    des.Click.connect(base::Bind<void>(&ColorBar::setAscending, this, false));
+
+    menu.showPopup(gfx::Point(bounds.x, bounds.y + bounds.h));
+    break;
+  }
+
+  case PalButton::PRESETS: {
+    if (!m_palettePopup) {
+      try {
+        m_palettePopup.reset(new PalettePopup());
+      } catch (const std::exception &ex) {
+        Console::showException(ex);
+        return;
+      }
     }
 
-    case PalButton::SORT: {
+    if (!m_palettePopup->isVisible()) {
       gfx::Rect bounds = m_buttons.getItem(item)->bounds();
 
-      Menu menu;
-      MenuItem
-        rev("Reverse Colors"),
-        grd("Gradient"),
-        hue("Sort by Hue"),
-        sat("Sort by Saturation"),
-        bri("Sort by Brightness"),
-        lum("Sort by Luminance"),
-        red("Sort by Red"),
-        grn("Sort by Green"),
-        blu("Sort by Blue"),
-        alp("Sort by Alpha"),
-        asc("Ascending"),
-        des("Descending");
-      menu.addChild(&rev);
-      menu.addChild(&grd);
-      menu.addChild(new ui::MenuSeparator);
-      menu.addChild(&hue);
-      menu.addChild(&sat);
-      menu.addChild(&bri);
-      menu.addChild(&lum);
-      menu.addChild(new ui::MenuSeparator);
-      menu.addChild(&red);
-      menu.addChild(&grn);
-      menu.addChild(&blu);
-      menu.addChild(&alp);
-      menu.addChild(new ui::MenuSeparator);
-      menu.addChild(&asc);
-      menu.addChild(&des);
-
-      if (m_ascending) asc.setSelected(true);
-      else des.setSelected(true);
-
-      rev.Click.connect(base::Bind<void>(&ColorBar::onReverseColors, this));
-      grd.Click.connect(base::Bind<void>(&ColorBar::onGradient, this));
-      hue.Click.connect(base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::HUE));
-      sat.Click.connect(base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::SATURATION));
-      bri.Click.connect(base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::VALUE));
-      lum.Click.connect(base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::LUMA));
-      red.Click.connect(base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::RED));
-      grn.Click.connect(base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::GREEN));
-      blu.Click.connect(base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::BLUE));
-      alp.Click.connect(base::Bind<void>(&ColorBar::onSortBy, this, SortPaletteBy::ALPHA));
-      asc.Click.connect(base::Bind<void>(&ColorBar::setAscending, this, true));
-      des.Click.connect(base::Bind<void>(&ColorBar::setAscending, this, false));
-
-      menu.showPopup(gfx::Point(bounds.x, bounds.y+bounds.h));
-      break;
+      m_palettePopup->showPopup(gfx::Rect(bounds.x, bounds.y + bounds.h,
+                                          ui::display_w() / 2,
+                                          ui::display_h() / 2));
+    } else {
+      m_palettePopup->closeWindow(NULL);
     }
+    break;
+  }
 
-    case PalButton::PRESETS: {
-      if (!m_palettePopup) {
-        try {
-          m_palettePopup.reset(new PalettePopup());
-        }
-        catch (const std::exception& ex) {
-          Console::showException(ex);
-          return;
-        }
-      }
+  case PalButton::OPTIONS: {
+    Menu *menu = AppMenus::instance()->getPalettePopupMenu();
+    if (menu) {
+      gfx::Rect bounds = m_buttons.getItem(item)->bounds();
 
-      if (!m_palettePopup->isVisible()) {
-        gfx::Rect bounds = m_buttons.getItem(item)->bounds();
-
-        m_palettePopup->showPopup(
-          gfx::Rect(bounds.x, bounds.y+bounds.h,
-                    ui::display_w()/2, ui::display_h()/2));
-      }
-      else {
-        m_palettePopup->closeWindow(NULL);
-      }
-      break;
+      menu->showPopup(gfx::Point(bounds.x, bounds.y + bounds.h));
     }
-
-    case PalButton::OPTIONS: {
-      Menu* menu = AppMenus::instance()->getPalettePopupMenu();
-      if (menu) {
-        gfx::Rect bounds = m_buttons.getItem(item)->bounds();
-
-        menu->showPopup(gfx::Point(bounds.x, bounds.y+bounds.h));
-      }
-      break;
-    }
-
+    break;
+  }
   }
 }
 
-void ColorBar::onRemapButtonClick()
-{
+void ColorBar::onRemapButtonClick() {
   ASSERT(m_oldPalette);
 
   // Create remap from m_oldPalette to the current palette
   Remap remap(1);
   try {
     ContextWriter writer(UIContext::instance(), 500);
-    Sprite* sprite = writer.sprite();
+    Sprite *sprite = writer.sprite();
     ASSERT(sprite);
     if (!sprite)
       return;
 
-    remap = create_remap_to_change_palette(
-      m_oldPalette.get(), get_current_palette(),
-      sprite->transparentColor(), true);
-  }
-  catch (base::Exception& e) {
+    remap = create_remap_to_change_palette(m_oldPalette.get(),
+                                           get_current_palette(),
+                                           sprite->transparentColor(), true);
+  } catch (base::Exception &e) {
     Console::showException(e);
   }
 
   // Check the remap
   if (!remap.isFor8bit() &&
-      Alert::show(
-        "Automatic Remap"
-        "<<The remap operation cannot be perfectly done for more than 256 colors."
-        "<<Do you want to continue anyway?"
-        "||&OK||&Cancel") != 1) {
+      Alert::show("Automatic Remap"
+                  "<<The remap operation cannot be perfectly done for more "
+                  "than 256 colors."
+                  "<<Do you want to continue anyway?"
+                  "||&OK||&Cancel") != 1) {
     return;
   }
 
   try {
     ContextWriter writer(UIContext::instance(), 500);
-    Sprite* sprite = writer.sprite();
+    Sprite *sprite = writer.sprite();
     if (sprite) {
       ASSERT(sprite->pixelFormat() == IMAGE_INDEXED);
 
@@ -573,7 +536,7 @@ void ColorBar::onRemapButtonClick()
         PalettePicks usedEntries(256);
 
         for (auto cel : sprite->uniqueCels()) {
-          for (const auto& i : LockImageBits<IndexedTraits>(cel->image()))
+          for (const auto &i : LockImageBits<IndexedTraits>(cel->image()))
             usedEntries[i] = true;
         }
 
@@ -590,28 +553,27 @@ void ColorBar::onRemapButtonClick()
           ImageRef newImage(Image::createCopy(celImage.get()));
           doc::remap_image(newImage.get(), remap);
 
-          transaction.execute(new cmd::ReplaceImage(
-                                sprite, celImage, newImage));
+          transaction.execute(
+              new cmd::ReplaceImage(sprite, celImage, newImage));
         }
       }
 
       color_t oldTransparent = sprite->transparentColor();
       color_t newTransparent = remap[oldTransparent];
       if (oldTransparent != newTransparent)
-        transaction.execute(new cmd::SetTransparentColor(sprite, newTransparent));
+        transaction.execute(
+            new cmd::SetTransparentColor(sprite, newTransparent));
 
       transaction.commit();
     }
     update_screen_for_document(writer.document());
     hideRemap();
-  }
-  catch (base::Exception& e) {
+  } catch (base::Exception &e) {
     Console::showException(e);
   }
 }
 
-void ColorBar::onPaletteViewIndexChange(int index, ui::MouseButtons buttons)
-{
+void ColorBar::onPaletteViewIndexChange(int index, ui::MouseButtons buttons) {
   m_lock = true;
 
   app::Color color = app::Color::fromIndex(index);
@@ -627,25 +589,30 @@ void ColorBar::onPaletteViewIndexChange(int index, ui::MouseButtons buttons)
   m_lock = false;
 }
 
-void ColorBar::onPaletteViewModification(const doc::Palette& newPalette,
-                                         PaletteViewModification mod)
-{
-  const char* text = "Palette Change";
+void ColorBar::onPaletteViewModification(const doc::Palette &newPalette,
+                                         PaletteViewModification mod) {
+  const char *text = "Palette Change";
   switch (mod) {
-    case PaletteViewModification::CLEAR: text = "Clear Colors"; break;
-    case PaletteViewModification::DRAGANDDROP: text = "Drag-and-Drop Colors"; break;
-    case PaletteViewModification::RESIZE: text = "Resize Palette"; break;
+  case PaletteViewModification::CLEAR:
+    text = "Clear Colors";
+    break;
+  case PaletteViewModification::DRAGANDDROP:
+    text = "Drag-and-Drop Colors";
+    break;
+  case PaletteViewModification::RESIZE:
+    text = "Resize Palette";
+    break;
   }
   setPalette(newPalette, text);
 }
 
-void ColorBar::setPalette(const doc::Palette& newPalette, const std::string& actionText)
-{
+void ColorBar::setPalette(const doc::Palette &newPalette,
+                          const std::string &actionText) {
   showRemap();
 
   try {
     ContextWriter writer(UIContext::instance(), 500);
-    Sprite* sprite = writer.sprite();
+    Sprite *sprite = writer.sprite();
     frame_t frame = writer.frame();
     if (sprite &&
         newPalette.countDiff(*sprite->palette(frame), nullptr, nullptr)) {
@@ -653,8 +620,7 @@ void ColorBar::setPalette(const doc::Palette& newPalette, const std::string& act
       transaction.execute(new cmd::SetPalette(sprite, frame, newPalette));
       transaction.commit();
     }
-  }
-  catch (base::Exception& e) {
+  } catch (base::Exception &e) {
     Console::showException(e);
   }
 
@@ -662,13 +628,11 @@ void ColorBar::setPalette(const doc::Palette& newPalette, const std::string& act
   manager()->invalidate();
 }
 
-void ColorBar::setTransparentIndex(int index)
-{
+void ColorBar::setTransparentIndex(int index) {
   try {
     ContextWriter writer(UIContext::instance(), 500);
-    Sprite* sprite = writer.sprite();
-    if (sprite &&
-        sprite->pixelFormat() == IMAGE_INDEXED &&
+    Sprite *sprite = writer.sprite();
+    if (sprite && sprite->pixelFormat() == IMAGE_INDEXED &&
         sprite->transparentColor() != static_cast<color_t>(index)) {
       // TODO merge this code with SpritePropertiesCommand
       Transaction transaction(writer.context(), "Set Transparent Color");
@@ -678,20 +642,18 @@ void ColorBar::setTransparentIndex(int index)
 
       update_screen_for_document(writer.document());
     }
-  }
-  catch (base::Exception& e) {
+  } catch (base::Exception &e) {
     Console::showException(e);
   }
 }
 
-void ColorBar::onPaletteViewChangeSize(int boxsize)
-{
+void ColorBar::onPaletteViewChangeSize(int boxsize) {
   Preferences::instance().colorBar.boxSize(boxsize);
 }
 
-void ColorBar::onPaletteViewPasteColors(
-  const Palette* fromPal, const doc::PalettePicks& from, const doc::PalettePicks& _to)
-{
+void ColorBar::onPaletteViewPasteColors(const Palette *fromPal,
+                                        const doc::PalettePicks &from,
+                                        const doc::PalettePicks &_to) {
   if (!from.picks() || !_to.picks()) // Nothing to do
     return;
 
@@ -703,7 +665,7 @@ void ColorBar::onPaletteViewPasteColors(
   int from_picks = from.picks();
   int to_picks = to.picks();
   if (to_picks < from_picks) {
-    for (int j=to_last+1; j<to.size() && to_picks<from_picks; ++j) {
+    for (int j = to_last + 1; j < to.size() && to_picks < from_picks; ++j) {
       to[j] = true;
       ++to_picks;
     }
@@ -721,7 +683,7 @@ void ColorBar::onPaletteViewPasteColors(
       else
         newPalette->addEntry(fromPal->getEntry(i));
 
-      for (++j; j<to.size(); ++j)
+      for (++j; j < to.size(); ++j)
         if (to[j])
           break;
     }
@@ -731,18 +693,11 @@ void ColorBar::onPaletteViewPasteColors(
   setPalette(*newPalette, "Paste Colors");
 }
 
-app::Color ColorBar::onPaletteViewGetForegroundIndex()
-{
-  return getFgColor();
-}
+app::Color ColorBar::onPaletteViewGetForegroundIndex() { return getFgColor(); }
 
-app::Color ColorBar::onPaletteViewGetBackgroundIndex()
-{
-  return getBgColor();
-}
+app::Color ColorBar::onPaletteViewGetBackgroundIndex() { return getBgColor(); }
 
-void ColorBar::onFgColorChangeFromPreferences()
-{
+void ColorBar::onFgColorChangeFromPreferences() {
   if (m_syncingWithPref)
     return;
 
@@ -750,8 +705,7 @@ void ColorBar::onFgColorChangeFromPreferences()
   setFgColor(Preferences::instance().colorBar.fgColor());
 }
 
-void ColorBar::onBgColorChangeFromPreferences()
-{
+void ColorBar::onBgColorChangeFromPreferences() {
   if (m_syncingWithPref)
     return;
 
@@ -759,8 +713,7 @@ void ColorBar::onBgColorChangeFromPreferences()
   setBgColor(Preferences::instance().colorBar.bgColor());
 }
 
-void ColorBar::onFgColorButtonChange(const app::Color& color)
-{
+void ColorBar::onFgColorButtonChange(const app::Color &color) {
   if (!m_lock) {
     m_paletteView.deselect();
     m_paletteView.invalidate();
@@ -775,8 +728,7 @@ void ColorBar::onFgColorButtonChange(const app::Color& color)
   onColorButtonChange(color);
 }
 
-void ColorBar::onBgColorButtonChange(const app::Color& color)
-{
+void ColorBar::onBgColorButtonChange(const app::Color &color) {
   if (!m_lock) {
     m_paletteView.deselect();
     m_paletteView.invalidate();
@@ -791,8 +743,7 @@ void ColorBar::onBgColorButtonChange(const app::Color& color)
   onColorButtonChange(color);
 }
 
-void ColorBar::onColorButtonChange(const app::Color& color)
-{
+void ColorBar::onColorButtonChange(const app::Color &color) {
   if (color.getType() == app::Color::IndexType)
     m_paletteView.selectColor(color.getIndex());
   else {
@@ -813,8 +764,8 @@ void ColorBar::onColorButtonChange(const app::Color& color)
     m_wheel->selectColor(color);
 }
 
-void ColorBar::onPickSpectrum(const app::Color& color, ui::MouseButtons buttons)
-{
+void ColorBar::onPickSpectrum(const app::Color &color,
+                              ui::MouseButtons buttons) {
   if (buttons == kButtonNone)
     buttons = m_lastButtons;
 
@@ -826,15 +777,15 @@ void ColorBar::onPickSpectrum(const app::Color& color, ui::MouseButtons buttons)
   m_lastButtons = buttons;
 }
 
-void ColorBar::onReverseColors()
-{
+void ColorBar::onReverseColors() {
   doc::PalettePicks entries;
   m_paletteView.getSelectedEntries(entries);
 
   entries.pickAllIfNeeded();
   int n = entries.picks();
 
-  std::vector<int> mapToOriginal(n); // Maps index from selectedPalette -> palette
+  std::vector<int> mapToOriginal(
+      n); // Maps index from selectedPalette -> palette
   int i = 0, j = 0;
   for (bool state : entries) {
     if (state)
@@ -856,8 +807,7 @@ void ColorBar::onReverseColors()
   setPalette(*get_current_palette()->remap(remap), "Reverse Colors");
 }
 
-void ColorBar::onSortBy(SortPaletteBy channel)
-{
+void ColorBar::onSortBy(SortPaletteBy channel) {
   PalettePicks entries;
   m_paletteView.getSelectedEntries(entries);
 
@@ -867,7 +817,8 @@ void ColorBar::onSortBy(SortPaletteBy channel)
   // Create a "subpalette" with selected entries only.
   auto palette = get_current_palette()->clone();
   auto selectedPalette = Palette::create(n);
-  std::vector<int> mapToOriginal(n); // Maps index from selectedPalette -> palette
+  std::vector<int> mapToOriginal(
+      n); // Maps index from selectedPalette -> palette
   int i = 0, j = 0;
   for (bool state : entries) {
     if (state) {
@@ -899,8 +850,7 @@ void ColorBar::onSortBy(SortPaletteBy channel)
   setPalette(*palette->remap(remapOrig), "Sort Colors");
 }
 
-void ColorBar::onGradient()
-{
+void ColorBar::onGradient() {
   int index1, index2;
   if (!m_paletteView.getSelectedRange(index1, index2))
     return;
@@ -911,16 +861,11 @@ void ColorBar::onGradient()
   setPalette(*newPalette, "Gradient");
 }
 
-void ColorBar::setAscending(bool ascending)
-{
-  m_ascending = ascending;
-}
+void ColorBar::setAscending(bool ascending) { m_ascending = ascending; }
 
-void ColorBar::showRemap()
-{
+void ColorBar::showRemap() {
   doc::Site site = UIContext::instance()->activeSite();
-  if (site.sprite() &&
-      site.sprite()->pixelFormat() == IMAGE_INDEXED) {
+  if (site.sprite() && site.sprite()->pixelFormat() == IMAGE_INDEXED) {
     if (!m_oldPalette) {
       m_oldPalette = get_current_palette()->clone();
       m_remapButton.setVisible(true);
@@ -929,8 +874,7 @@ void ColorBar::showRemap()
   }
 }
 
-void ColorBar::hideRemap()
-{
+void ColorBar::hideRemap() {
   if (!m_oldPalette)
     return;
 
@@ -939,65 +883,57 @@ void ColorBar::hideRemap()
   layout();
 }
 
-void ColorBar::onNewInputPriority(InputChainElement* element)
-{
+void ColorBar::onNewInputPriority(InputChainElement *element) {
   m_paletteView.deselect();
 }
 
-bool ColorBar::onCanCut(Context* ctx)
-{
+bool ColorBar::onCanCut(Context *ctx) {
   return (m_paletteView.getSelectedEntriesCount() > 0);
 }
 
-bool ColorBar::onCanCopy(Context* ctx)
-{
+bool ColorBar::onCanCopy(Context *ctx) {
   return (m_paletteView.getSelectedEntriesCount() > 0);
 }
 
-bool ColorBar::onCanPaste(Context* ctx)
-{
-  return (clipboard::get_current_format() == clipboard::ClipboardPaletteEntries);
+bool ColorBar::onCanPaste(Context *ctx) {
+  return (clipboard::get_current_format() ==
+          clipboard::ClipboardPaletteEntries);
 }
 
-bool ColorBar::onCanClear(Context* ctx)
-{
+bool ColorBar::onCanClear(Context *ctx) {
   return (m_paletteView.getSelectedEntriesCount() > 0);
 }
 
-bool ColorBar::onCut(Context* ctx)
-{
+bool ColorBar::onCut(Context *ctx) {
   m_paletteView.cutToClipboard();
   return true;
 }
 
-bool ColorBar::onCopy(Context* ctx)
-{
+bool ColorBar::onCopy(Context *ctx) {
   m_paletteView.copyToClipboard();
   return true;
 }
 
-bool ColorBar::onPaste(Context* ctx)
-{
+bool ColorBar::onPaste(Context *ctx) {
   m_paletteView.pasteFromClipboard();
   return true;
 }
 
-bool ColorBar::onClear(Context* ctx)
-{
+bool ColorBar::onClear(Context *ctx) {
   m_paletteView.clearSelection();
   return true;
 }
 
-void ColorBar::onCancel(Context* ctx)
-{
+void ColorBar::onCancel(Context *ctx) {
   m_paletteView.deselect();
   m_paletteView.discardClipboardSelection();
   invalidate();
 }
 
-void ColorBar::onFixWarningClick(ColorButton* colorButton, ui::Button* warningIcon)
-{
-  Command* command = CommandsModule::instance()->getCommandByName(CommandId::AddColor);
+void ColorBar::onFixWarningClick(ColorButton *colorButton,
+                                 ui::Button *warningIcon) {
+  Command *command =
+      CommandsModule::instance()->getCommandByName(CommandId::AddColor);
   Params params;
   params.set("source", "color");
   params.set("color", colorButton->getColor().toString().c_str());
@@ -1005,40 +941,40 @@ void ColorBar::onFixWarningClick(ColorButton* colorButton, ui::Button* warningIc
   UIContext::instance()->executeCommand(command, params);
 }
 
-void ColorBar::updateWarningIcon(const app::Color& color, ui::Button* warningIcon)
-{
+void ColorBar::updateWarningIcon(const app::Color &color,
+                                 ui::Button *warningIcon) {
   int index = -1;
+  printf("\n");
 
   if (color.getType() == app::Color::MaskType) {
-    if (current_editor &&
-        current_editor->sprite()) {
+    printf("Path: if\n");
+    if (current_editor && current_editor->sprite()) {
       index = current_editor->sprite()->transparentColor();
-    }
-    else
+    } else
       index = 0;
-  }
-  else {
+  } else {
+    printf("Path: else\n");
+    printf("Color rgba: %d %d %d %d\n", color.getRed(), color.getGreen(),
+           color.getBlue(), color.getAlpha());
+
     index = get_current_palette()->findExactMatch(
-      color.getRed(),
-      color.getGreen(),
-      color.getBlue(),
-      color.getAlpha(), -1);
+        color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha(),
+        -1);
   }
 
-  printf("index: %d", index);
+  printf("index: %d\n", index);
 
   warningIcon->setVisible(index < 0);
   warningIcon->parent()->layout();
 }
 
 // static
-void ColorBar::fixColorIndex(ColorButton& colorButton)
-{
+void ColorBar::fixColorIndex(ColorButton &colorButton) {
   app::Color color = colorButton.getColor();
 
   if (color.getType() == Color::IndexType) {
     int oldIndex = color.getIndex();
-    int newIndex = MID(0, oldIndex, get_current_palette()->size()-1);
+    int newIndex = MID(0, oldIndex, get_current_palette()->size() - 1);
     if (oldIndex != newIndex) {
       color = Color::fromIndex(newIndex);
       colorButton.setColor(color);
