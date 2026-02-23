@@ -138,8 +138,11 @@ doc::color_t color_utils::color_for_target_mask(const app::Color& color, const C
                       -1);
 
           c = get_current_palette()->findExactMatch(r, g, b, a, mask);
-          if (c < 0)
+          if (c < 0) 
+          // {
             c = get_current_palette()->findBestfit(r, g, b, a, mask);
+            // printf("a=%d, found best fit with a=%d", a, rgba_geta(c));
+          // } else printf("found exact match");
         }
         break;
     }

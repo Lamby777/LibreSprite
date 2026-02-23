@@ -1025,6 +1025,8 @@ void ColorBar::updateWarningIcon(const app::Color& color, ui::Button* warningIco
       color.getAlpha(), -1);
   }
 
+  printf("index: %d", index);
+
   warningIcon->setVisible(index < 0);
   warningIcon->parent()->layout();
 }
