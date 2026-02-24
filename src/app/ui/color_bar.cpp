@@ -947,16 +947,11 @@ void ColorBar::updateWarningIcon(const app::Color &color,
   printf("\n");
 
   if (color.getType() == app::Color::MaskType) {
-    printf("Path: if\n");
     if (current_editor && current_editor->sprite()) {
       index = current_editor->sprite()->transparentColor();
     } else
       index = 0;
   } else {
-    printf("Path: else\n");
-    printf("Color rgba: %d %d %d %d\n", color.getRed(), color.getGreen(),
-           color.getBlue(), color.getAlpha());
-
     index = get_current_palette()->findExactMatch(
         color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha(),
         -1);
